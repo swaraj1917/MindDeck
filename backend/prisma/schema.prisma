@@ -1,0 +1,87 @@
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ReviewRating {
+  AGAIN
+  HARD
+  GOOD
+  EASY
+}
+
+model User {
+  id        String         @id @default(cuid())
+  name      String
+  email     String         @unique
+  password  String
+  decks     Deck[]
+  reviews   Review[]
+  settings  UserSettings?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model Deck {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cards       Card[]
+  isPublic    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Card {
+  id               String   @id @default(cuid())
+  question         String
+  options          Json
+  correctAnswer    String
+  explanation      String?
+  deckId           String
+  deck             Deck     @relation(fields: [deckId], references: [id], onDelete: Cascade)
+  intervalDays     Int      @default(0)
+  easeFactor       Float    @default(2.5)
+  repetitions      Int      @default(0)
+  nextReviewAt     DateTime @default(now())
+  lastReviewedAt   DateTime?
+  firstStudiedAt   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  reviews          Review[]
+
+  @@index([deckId])
+  @@index([nextReviewAt])
+}
+
+model Review {
+  id              String       @id @default(cuid())
+  userId          String
+  cardId          String
+  rating          ReviewRating
+  reviewedAt      DateTime     @default(now())
+  intervalBefore  Int
+  intervalAfter   Int
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card            Card         @relation(fields: [cardId], references: [id], onDelete: Cascade)
+
+  @@index([userId, reviewedAt])
+  @@index([cardId, reviewedAt])
+}
+
+model UserSettings {
+  id                 String   @id @default(cuid())
+  userId             String   @unique
+  timezone           String   @default("Asia/Kolkata")
+  dailyNewCardLimit  Int      @default(20)
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
