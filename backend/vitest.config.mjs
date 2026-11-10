@@ -1,4 +1,3 @@
-@'
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
@@ -6,4 +5,3 @@ export default defineConfig({
     env: { JWT_SECRET: 'test-secret-for-vitest' },
   },
 });
-'@ | Set-Content -Path vitest.config.mjs -Encoding ascii

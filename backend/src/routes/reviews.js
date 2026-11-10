@@ -1,61 +1,35 @@
-
-const express = require("express");
-const { z } = require("zod");
-const prisma = require("../prisma");
-const { scheduleReview } = require("../services/reviewScheduler");
+const express = require('express');
+const { z } = require('zod');
+const prisma = require('../prisma');
+const { scheduleReview } = require('../services/reviewScheduler');
 
 const router = express.Router();
 
 const reviewSchema = z.object({
-  userId: z.string().min(1),
   cardId: z.string().min(1),
-  rating: z.enum(["AGAIN", "HARD", "GOOD", "EASY"]),
+  rating: z.enum(['AGAIN', 'HARD', 'GOOD', 'EASY']),
 });
 
-router.post("/", async (req, res) => {
+router.post('/', async (req, res) => {
   const result = reviewSchema.safeParse(req.body);
 
   if (!result.success) {
     return res.status(400).json({
-      error: "Invalid review details",
+      error: 'Invalid review details',
       details: result.error.issues,
     });
   }
 
-  const { userId, cardId, rating } = result.data;
+  const { cardId, rating } = result.data;
+  const userId = req.userId;
 
   try {
-    const card = await prisma.card.findUnique({
-      where: { id: cardId },
+    const card = await prisma.card.findFirst({
+      where: { id: cardId, deck: { userId } },
     });
 
     if (!card) {
-      return res.status(404).json({
-        error: "Card not found",
-      });
-    }
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        error: "User not found",
-      });
-    }
-
-    const deck = await prisma.deck.findFirst({
-      where: {
-        id: card.deckId,
-        userId,
-      },
-    });
-
-    if (!deck) {
-      return res.status(403).json({
-        error: "You cannot review this card",
-      });
+      return res.status(404).json({ error: 'Card not found' });
     }
 
     const beforeInterval = card.intervalDays;
@@ -81,19 +55,13 @@ router.post("/", async (req, res) => {
         },
       });
 
-      return {
-        updatedCard,
-        review: reviewRecord,
-      };
+      return { updatedCard, review: reviewRecord };
     });
 
     return res.status(201).json(review);
   } catch (error) {
-    console.error("Failed to save review:", error.message);
-
-    return res.status(500).json({
-      error: "Failed to save review",
-    });
+    console.error('Failed to save review:', error.message);
+    return res.status(500).json({ error: 'Failed to save review' });
   }
 });
 

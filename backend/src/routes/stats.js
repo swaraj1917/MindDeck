@@ -1,13 +1,7 @@
-
 const express = require("express");
-const { z } = require("zod");
 const prisma = require("../prisma");
 
 const router = express.Router();
-
-const querySchema = z.object({
-  userId: z.string().trim().min(1),
-});
 
 function getDateKey(date, timezone) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -34,17 +28,8 @@ function shiftDateKey(dateKey, amount) {
 }
 
 router.get("/", async (req, res) => {
-  const parsed = querySchema.safeParse(req.query);
-
-  if (!parsed.success) {
-    return res.status(400).json({
-      error: "A valid userId is required",
-      details: parsed.error.issues,
-    });
-  }
-
   try {
-    const { userId } = parsed.data;
+    const userId = req.userId;
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
