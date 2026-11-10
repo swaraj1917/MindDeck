@@ -1,12 +1,9 @@
-
 import { useEffect, useState } from 'react'
 import CardForm from './CardForm'
+import { apiFetch } from './api'
 import './App.css'
 
-const API_URL = 'http://localhost:5000/api'
-const USER_ID = 'cmvt5qrkl0000duvo0ww9vs2b'
-
-function App() {
+function App({ user, onLogout }) {
   const [decks, setDecks] = useState([])
   const [studyQueue, setStudyQueue] = useState([])
   const [queueInfo, setQueueInfo] = useState(null)
@@ -27,27 +24,11 @@ function App() {
     try {
       setError('')
 
-      const [
-        decksResponse,
-        studyResponse,
-        statsResponse,
-      ] = await Promise.all([
-        fetch(`${API_URL}/decks`),
-        fetch(`${API_URL}/study/due?userId=${USER_ID}`),
-        fetch(`${API_URL}/stats?userId=${USER_ID}`),
+      const [decksData, studyData, statsData] = await Promise.all([
+        apiFetch('/decks'),
+        apiFetch('/study/due'),
+        apiFetch('/stats'),
       ])
-
-      if (
-        !decksResponse.ok ||
-        !studyResponse.ok ||
-        !statsResponse.ok
-      ) {
-        throw new Error('Could not load your dashboard. Please try again.')
-      }
-
-      const decksData = await decksResponse.json()
-      const studyData = await studyResponse.json()
-      const statsData = await statsResponse.json()
 
       setDecks(decksData)
       setStudyQueue(studyData.cards)
@@ -91,22 +72,10 @@ function App() {
       setSubmitting(true)
       setError('')
 
-      const response = await fetch(`${API_URL}/decks`, {
+      await apiFetch('/decks', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name,
-          userId: USER_ID,
-        }),
+        body: JSON.stringify({ name }),
       })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Could not create the deck.')
-      }
 
       setNewDeckName('')
       setShowCreateDeck(false)
@@ -126,23 +95,10 @@ function App() {
       setSubmitting(true)
       setError('')
 
-      const response = await fetch(`${API_URL}/reviews`, {
+      await apiFetch('/reviews', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId: USER_ID,
-          cardId: activeCard.id,
-          rating,
-        }),
+        body: JSON.stringify({ cardId: activeCard.id, rating }),
       })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Could not save your review.')
-      }
 
       await loadDashboard()
     } catch (err) {
@@ -209,12 +165,21 @@ function App() {
         </nav>
 
         <div className="sidebar-bottom">
-          <div className="profile-avatar">S</div>
+          <div className="profile-avatar">
+            {user.name.charAt(0).toUpperCase()}
+          </div>
 
           <div>
-            <strong>Demo User</strong>
-            <span>Personal workspace</span>
+            <strong>{user.name}</strong>
+            <span>{user.email}</span>
           </div>
+
+          <button
+            className="secondary-button logout-button"
+            onClick={onLogout}
+          >
+            Log out
+          </button>
         </div>
       </aside>
 

@@ -1,8 +1,5 @@
-
 import { useState } from 'react'
-
-const API_URL = 'http://localhost:5000/api'
-const USER_ID = 'cmvt5qrkl0000duvo0ww9vs2b'
+import { apiFetch } from './api'
 
 function CardForm({ deckId, onCreated, onCancel }) {
   const [question, setQuestion] = useState('')
@@ -52,13 +49,9 @@ function CardForm({ deckId, onCreated, onCancel }) {
       setSaving(true)
       setError('')
 
-      const response = await fetch(`${API_URL}/cards`, {
+      await apiFetch('/cards', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          userId: USER_ID,
           deckId,
           question: cleanQuestion,
           options: cleanOptions,
@@ -66,12 +59,6 @@ function CardForm({ deckId, onCreated, onCancel }) {
           explanation: explanation.trim(),
         }),
       })
-
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Could not save the flashcard.')
-      }
 
       onCreated()
     } catch (err) {
@@ -98,7 +85,7 @@ function CardForm({ deckId, onCreated, onCancel }) {
         value={question}
         onChange={(event) => setQuestion(event.target.value)}
         placeholder="Enter your question..."
-        maxLength={2000}
+        maxLength={1000}
         rows={3}
         required
       />
@@ -117,7 +104,7 @@ function CardForm({ deckId, onCreated, onCancel }) {
               value={option}
               onChange={(event) => updateOption(index, event.target.value)}
               placeholder={`Enter option ${String.fromCharCode(65 + index)}`}
-              maxLength={500}
+              maxLength={300}
               required
             />
           </div>
@@ -152,7 +139,7 @@ function CardForm({ deckId, onCreated, onCancel }) {
         value={explanation}
         onChange={(event) => setExplanation(event.target.value)}
         placeholder="Explain why this answer is correct..."
-        maxLength={3000}
+        maxLength={1000}
         rows={2}
       />
 
