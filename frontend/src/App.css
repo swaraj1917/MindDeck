@@ -1359,3 +1359,26 @@ button.answer-option:disabled {
   display: block;
   overflow-wrap: anywhere;
 }
+
+/* ---------- Show the profile and Log out button on phones ---------- */
+@media (max-width: 700px) {
+  .sidebar-bottom {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    margin-top: 12px;
+    padding: 10px 2px 0;
+  }
+
+  .sidebar-bottom .profile-avatar,
+  .sidebar-bottom span {
+    display: none;
+  }
+
+  .logout-button {
+    width: auto;
+    margin-top: 0;
+    min-height: 36px;
+    padding: 6px 14px;
+  }
+}
