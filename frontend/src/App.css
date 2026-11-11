@@ -1296,3 +1296,66 @@ a {
   width: 100%;
   margin-top: 0.5rem;
 }
+
+/* ---------- Answer buttons and study feedback ---------- */
+button.answer-option {
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+button.answer-option:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.selected-option {
+  outline: 2px solid #6c63ff;
+}
+
+.wrong-option {
+  outline: 2px solid #e5484d;
+  background: rgba(229, 72, 77, 0.1);
+}
+
+.wrong-mark {
+  margin-left: auto;
+  color: #e5484d;
+  font-weight: 700;
+}
+
+/* ---------- Card list and delete buttons ---------- */
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.card-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(128, 128, 128, 0.25);
+  border-radius: 12px;
+}
+
+.card-list-item p {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.danger-button {
+  color: #e5484d;
+  border-color: #e5484d;
+}
+
+.sidebar-bottom strong,
+.sidebar-bottom span {
+  display: block;
+  overflow-wrap: anywhere;
+}

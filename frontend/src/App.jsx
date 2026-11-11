@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import CardForm from './CardForm'
+import CardList from './CardList'
 import { apiFetch } from './api'
 import './App.css'
 
@@ -14,11 +15,14 @@ function App({ user, onLogout }) {
 
   const [activeCard, setActiveCard] = useState(null)
   const [showAnswer, setShowAnswer] = useState(false)
+  const [selectedOption, setSelectedOption] = useState(null)
   const [submitting, setSubmitting] = useState(false)
 
   const [showCreateDeck, setShowCreateDeck] = useState(false)
   const [newDeckName, setNewDeckName] = useState('')
   const [selectedDeck, setSelectedDeck] = useState(null)
+  const [viewDeck, setViewDeck] = useState(null)
+  const [activeSection, setActiveSection] = useState('dashboard')
 
   async function loadDashboard() {
     try {
@@ -47,6 +51,7 @@ function App({ user, onLogout }) {
       })
 
       setShowAnswer(false)
+      setSelectedOption(null)
     } catch (err) {
       setError(err.message || 'Unable to connect to MindDeck.')
     } finally {
@@ -57,6 +62,37 @@ function App({ user, onLogout }) {
   useEffect(() => {
     loadDashboard()
   }, [])
+
+    useEffect(() => {
+    function updateActiveSection() {
+      const middle = window.innerHeight / 2
+      const decksTop = document.getElementById('decks')?.getBoundingClientRect().top
+      const studyTop = document.getElementById('study')?.getBoundingClientRect().top
+
+      if (decksTop === undefined || studyTop === undefined) return
+
+      const sideBySide = Math.abs(studyTop - decksTop) < 50
+
+      if (decksTop > middle) {
+        setActiveSection('dashboard')
+      } else if (!sideBySide && studyTop <= middle) {
+        setActiveSection('study')
+      } else if (!sideBySide) {
+        setActiveSection('decks')
+      } else {
+        setActiveSection((current) =>
+          current === 'dashboard' ? 'decks' : current
+        )
+      }
+    }
+
+    window.addEventListener('scroll', updateActiveSection, true)
+    updateActiveSection()
+
+    return () => {
+      window.removeEventListener('scroll', updateActiveSection, true)
+    }
+  }, [loading])
 
   async function createDeck(event) {
     event.preventDefault()
@@ -85,6 +121,27 @@ function App({ user, onLogout }) {
       setError(err.message || 'Could not create the deck.')
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function deleteDeck(deck) {
+    const confirmed = window.confirm(
+      `Delete '${deck.name}' and all of its cards? This cannot be undone.`
+    )
+
+    if (!confirmed) return
+
+    try {
+      setError('')
+
+      await apiFetch(`/decks/${deck.id}`, { method: 'DELETE' })
+
+      if (viewDeck?.id === deck.id) setViewDeck(null)
+      if (selectedDeck?.id === deck.id) setSelectedDeck(null)
+
+      await loadDashboard()
+    } catch (err) {
+      setError(err.message || 'Could not delete the deck.')
     }
   }
 
@@ -151,15 +208,27 @@ function App({ user, onLogout }) {
         <p className="sidebar-label">WORKSPACE</p>
 
         <nav className="sidebar-nav">
-          <a className="nav-link active" href="#dashboard">
+          <a
+            className={`nav-link ${activeSection === 'dashboard' ? 'active' : ''}`}
+            href="#dashboard"
+            onClick={() => setActiveSection('dashboard')}
+          >
             <span>▦</span> Dashboard
           </a>
 
-          <a className="nav-link" href="#decks">
+          <a
+            className={`nav-link ${activeSection === 'decks' ? 'active' : ''}`}
+            href="#decks"
+            onClick={() => setActiveSection('decks')}
+          >
             <span>▤</span> My decks
           </a>
 
-          <a className="nav-link" href="#study">
+          <a
+            className={`nav-link ${activeSection === 'study' ? 'active' : ''}`}
+            href="#study"
+            onClick={() => setActiveSection('study')}
+          >
             <span>◷</span> Study session
           </a>
         </nav>
@@ -197,6 +266,7 @@ function App({ user, onLogout }) {
                 setError('')
                 setShowCreateDeck((current) => !current)
                 setSelectedDeck(null)
+                setViewDeck(null)
               }}
             >
               + Create deck
@@ -409,6 +479,14 @@ function App({ user, onLogout }) {
           </section>
         )}
 
+        {viewDeck && (
+          <CardList
+            deck={viewDeck}
+            onChanged={loadDashboard}
+            onClose={() => setViewDeck(null)}
+          />
+        )}
+
         <div className="content-grid">
           <section className="panel decks-panel" id="decks">
             <div className="panel-heading">
@@ -460,10 +538,30 @@ function App({ user, onLogout }) {
                         onClick={() => {
                           setError('')
                           setShowCreateDeck(false)
+                          setViewDeck(null)
                           setSelectedDeck(deck)
                         }}
                       >
                         + Add MCQ
+                      </button>
+
+                      <button
+                        className="add-mcq-button"
+                        onClick={() => {
+                          setError('')
+                          setShowCreateDeck(false)
+                          setSelectedDeck(null)
+                          setViewDeck(deck)
+                        }}
+                      >
+                        View cards
+                      </button>
+
+                      <button
+                        className="add-mcq-button danger-button"
+                        onClick={() => deleteDeck(deck)}
+                      >
+                        Delete
                       </button>
                     </div>
                   </article>
@@ -503,33 +601,52 @@ function App({ user, onLogout }) {
                 <h3>{activeCard.question}</h3>
 
                 <div className="answer-options">
-                  {activeCard.options.map((option, index) => (
-                    <div
-                      className={`answer-option ${
-                        showAnswer &&
-                        option === activeCard.correctAnswer
-                          ? 'correct-option'
-                          : ''
-                      }`}
-                      key={`${activeCard.id}-${option}`}
-                    >
-                      <span className="option-letter">
-                        {String.fromCharCode(65 + index)}
-                      </span>
+                  {activeCard.options.map((option, index) => {
+                    const isCorrect = option === activeCard.correctAnswer
+                    const isSelected = option === selectedOption
 
-                      <span>{option}</span>
+                    let stateClass = ''
 
-                      {showAnswer &&
-                        option === activeCard.correctAnswer && (
+                    if (showAnswer && isCorrect) {
+                      stateClass = 'correct-option'
+                    } else if (showAnswer && isSelected) {
+                      stateClass = 'wrong-option'
+                    } else if (isSelected) {
+                      stateClass = 'selected-option'
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        className={`answer-option ${stateClass}`}
+                        key={`${activeCard.id}-${option}`}
+                        disabled={showAnswer}
+                        onClick={() => setSelectedOption(option)}
+                      >
+                        <span className="option-letter">
+                          {String.fromCharCode(65 + index)}
+                        </span>
+
+                        <span>{option}</span>
+
+                        {showAnswer && isCorrect && (
                           <span className="correct-mark">✓</span>
                         )}
-                    </div>
-                  ))}
+
+                        {showAnswer && !isCorrect && isSelected && (
+                          <span className="wrong-mark">✗</span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
 
                 {showAnswer && (
                   <div className="answer-explanation">
                     <strong>
+                      {selectedOption === activeCard.correctAnswer
+                        ? 'Correct! '
+                        : 'Not quite. '}
                       Correct answer: {activeCard.correctAnswer}
                     </strong>
 
@@ -542,9 +659,11 @@ function App({ user, onLogout }) {
                 {!showAnswer ? (
                   <button
                     className="primary-button reveal-button"
+                    disabled={!selectedOption}
                     onClick={() => setShowAnswer(true)}
                   >
-                    Reveal answer <span>→</span>
+                    {selectedOption ? 'Check answer' : 'Select an answer'}{' '}
+                    <span>→</span>
                   </button>
                 ) : (
                   <div className="rating-section">

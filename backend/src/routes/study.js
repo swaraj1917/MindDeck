@@ -1,13 +1,7 @@
-
 const express = require("express");
-const { z } = require("zod");
 const prisma = require("../prisma");
 
 const router = express.Router();
-
-const queueQuerySchema = z.object({
-  userId: z.string().min(1),
-});
 
 function localMidnightAsUtc(year, month, day, timezone) {
   const target = Date.UTC(year, month - 1, day);
@@ -51,15 +45,7 @@ function localMidnightAsUtc(year, month, day, timezone) {
 }
 
 router.get("/due", async (req, res) => {
-  const result = queueQuerySchema.safeParse(req.query);
-
-  if (!result.success) {
-    return res.status(400).json({
-      error: "A valid userId is required",
-    });
-  }
-
-  const { userId } = result.data;
+  const userId = req.userId;
 
   try {
     const user = await prisma.user.findUnique({
