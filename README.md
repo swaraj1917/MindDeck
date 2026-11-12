@@ -2,7 +2,11 @@
 
 A spaced-repetition study app. Every flashcard is a multiple-choice question, and a scheduler decides when you should see each card again based on how well you remembered it.
 
-**Live demo:** [add your link here after deploying]
+**Live demo:** <https://frontend-five-topaz-84.vercel.app/>
+
+Demo login: `demo@minddeck.local` / `Demo@1234`
+
+The backend runs on a free Render plan, so the first request after a quiet period can take up to a minute while it wakes up.
 
 ## Features
 
@@ -64,6 +68,13 @@ npm test
 - Password: `Demo@1234`
 
 The seed script creates this account with a sample deck.
+
+## Deployment
+
+- Frontend: Vercel, built from the `frontend` folder, with `VITE_API_URL` pointing at the API
+- Backend: Render web service, built from the `backend` folder
+- Database: Neon PostgreSQL, set up with `npx prisma migrate deploy` and `npm run seed`
+- Secrets such as `DATABASE_URL` and `JWT_SECRET` are set as environment variables on the hosting services and are never committed
 
 ## Data model
 
