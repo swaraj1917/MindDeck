@@ -1254,8 +1254,7 @@ a {
 button.answer-option {
   width: 100%;
   text-align: left;
-  font: inherit;
-  color: inherit;
+  font-family: inherit;
   cursor: pointer;
 }
 
@@ -1489,5 +1488,58 @@ h3 {
 @media (max-width: 420px) {
   .auth-card {
     padding: 24px 20px;
+  }
+}
+
+/* ---------- Deck row: name on top, buttons underneath ---------- */
+.deck-item {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.deck-details {
+  flex: 1 1 140px;
+}
+
+.deck-actions {
+  flex: 1 0 100%;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-left: 55px;
+}
+
+.add-mcq-button {
+  padding: 8px 13px;
+  border: 1px solid #e0dcf5;
+  border-radius: 8px;
+  color: #6653db;
+  background: #f7f5ff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.add-mcq-button:hover {
+  background: #ece9ff;
+  border-color: #d8d2ff;
+}
+
+.danger-button {
+  color: #d6454b;
+  border-color: #f3c9cb;
+  background: #fff5f5;
+}
+
+.danger-button:hover {
+  background: #ffeaea;
+  border-color: #eba3a6;
+}
+
+@media (max-width: 420px) {
+  .deck-actions {
+    padding-left: 45px;
   }
 }
